@@ -1,14 +1,16 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
 import { RegisterDto } from './dto/createUser.dto';
+import { UserAuthenticated } from './dto/userAuthenticated.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Create user (buyer)
   async registerUser(dto: RegisterDto) {
-    const foundUser = await this.prisma.user.findUnique({ 
+    const foundUser = await this.prisma.user.findUnique({
       where: { email: dto.email } 
     });
 
@@ -18,7 +20,7 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    const newUser = await this.prisma.user.create({
+    const createUser = await this.prisma.user.create({
       data: {
         ...dto,
         password: hashedPassword,
@@ -26,7 +28,23 @@ export class AuthService {
     });
 
     // Opcional: no devolver el password
-    const { password, ...rest } = newUser;
+    const { password, ...rest } = createUser;
     return rest;
+  }
+
+  // Log in to buyers
+  async authenticatedUser(dto: UserAuthenticated) {
+    const foundUserAuthenticated = await this.prisma.user.findUnique({
+      where: { 
+        email: dto.email,
+        password: dto.password
+      }
+    })
+
+    if (!foundUserAuthenticated) {
+      console.log('Usuario no autenticado')
+    }
+
+    return foundUserAuthenticated;
   }
 }
