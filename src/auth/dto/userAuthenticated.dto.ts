@@ -1,7 +1,7 @@
 import { IsEmail, IsString, Length } from 'class-validator';
 import { Dto } from '@lib/dto/Dto';
 
-export class UserAuthenticated extends Dto<UserAuthenticated> {
+export class UserAuthenticatedDto extends Dto<UserAuthenticatedDto> {
   @IsEmail()
   @IsString()
   email: string;
