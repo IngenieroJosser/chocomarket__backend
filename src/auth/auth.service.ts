@@ -8,11 +8,13 @@ import { VerifyOtpDto } from './dto/verifyOtp.dto';
 import { randomBytes } from 'crypto';
 import { MailService } from 'src/mail/mail.service';
 import * as bcrypt from 'bcrypt';
-
+import { UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 @Injectable()
 export class AuthService {
   constructor(private readonly prisma: PrismaService,
               private readonly mailService: MailService,
+              private readonly jwtService: JwtService,
   ) {}
 
   async registerUser(dto: RegisterDto) {
@@ -40,17 +42,36 @@ export class AuthService {
 
   async authenticatedUser(dto: UserAuthenticatedDto) {
     const foundUserAuthenticated = await this.prisma.user.findUnique({
-      where: { 
-        email: dto.email,
-        password: dto.password
-      }
-    })
+      where: { email: dto.email },
+    });
 
     if (!foundUserAuthenticated) {
-      console.log('Usuario no autenticado')
+      throw new UnauthorizedException('Correo o contraseña incorrectos');
     }
 
-    return foundUserAuthenticated;
+    const isPasswordValid = await bcrypt.compare(dto.password, foundUserAuthenticated.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Correo o contraseña incorrectos');
+    }
+
+    // Creo el payload (puedo agregar más campos si necesito)
+    const payload = {
+      sub: foundUserAuthenticated.id,
+      email: foundUserAuthenticated.email,
+    };
+
+    // Genero el token
+    const token = this.jwtService.sign(payload);
+
+    return {
+      token, // aquí lo devolvo
+      user: {
+        id: foundUserAuthenticated.id,
+        email: foundUserAuthenticated.email,
+        name: foundUserAuthenticated.name, // si tienes otros campos puedo agregarlos
+      },
+    };
   }
 
   async forgotPassword(dto: ForgotPasswordDto) {
