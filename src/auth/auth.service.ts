@@ -84,11 +84,11 @@ export class AuthService {
     return { message: 'Se ha enviado un código OTP a tu correo' };
   }
   
-
   async verifyOtp(dto: VerifyOtpDto) {
     const user = await this.prisma.user.findUnique({
       where: { 
-        email: dto.email }
+        email: dto.email 
+      }
     });
 
     if (!user || !user.resetToken || !user.resetTokenExpiry) throw new Error('OTP inválido o expirado');

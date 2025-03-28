@@ -1,8 +1,6 @@
-// src/mail/mail.service.ts
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { VerifyOtpDto } from 'src/auth/dto/verifyOtp.dto';
-import { RegisterDto } from 'src/auth/dto/createUser.dto';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -11,21 +9,24 @@ export class MailService {
   constructor() {}
 
   private transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'gmail',
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.MAIL_USER,
       pass: process.env.MAIL_PASS,
     },
-    secure: true,
-    port: 465,
-  });  
+    tls: {
+      rejectUnauthorized: false,
+    }
+  }); 
 
   // Mi correo para nodemailer es cordobarivasjosser11@gmail.com
   async sendOtp(dataMail: VerifyOtpDto) {
     const mailOptions = {
       from: 'ChocóMarket <cordobarivasjosser11@gmail.com>',
       to: dataMail.email,
-      subject: 'Código OTP para reestablecer tu contraseña',
+      subject: 'Código OTP...',
       text: `Tu código OTP es: ${dataMail.otp}. Este código expira en 10 minutos.`,
       html: `
         <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
@@ -55,7 +56,12 @@ export class MailService {
           cid: 'logo', // el mismo identificador que usas en el src de la imagen
         },
       ],
-    };        
-    await this.transporter.sendMail(mailOptions);
+    };  
+    try {
+      await this.transporter.sendMail(mailOptions);
+    } catch (err) {
+      console.error('❌ Error al enviar correo:', err);
+      throw new Error('No se pudo enviar el correo');
+    }
   }
 }
